@@ -19,25 +19,16 @@ jobs:
         steps:
         -   name: Checkout 
             uses: actions/checkout@v3
+        -   name: Set Docker Buildx
+            uses: docker/setup-buildx-action@v3
 
-        -   name: Python base
-            uses: actions/setup-python@v4
-            with:
-                python-version: "3.10"
+        -   name: Construir Docker image
+            run: docker build -t my-event-engine .
 
-        -   name: Instalamos depenndencias
+        -   name: Correr tests dentro del contenedor
             run: |
-                python -m pip install --upgrade pip
-                pip install -r requirements.txt
-                pip install flake8 pytest
-
-        -   name: Lint con flake8
-            run: |
-                flake8 tests
-        -   name: Prepare folders
-            run: |
-                mkdir -p /app/data
-                mkdir -p /app/reports
-        -   name: corremos pytest
-            run: |
-                pytest --maxfail=1 --disable-warnings -v
+                docker run --rm \
+                --network host \
+                -v ${{ github.workspace }}/tests:/app/tests \
+                my-event-engine \
+                pytest /app/tests --maxfail=1 --disable-warnings -v
